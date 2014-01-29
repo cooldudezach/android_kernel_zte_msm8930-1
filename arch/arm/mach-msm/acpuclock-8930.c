@@ -123,7 +123,7 @@ static struct msm_bus_paths bw_level_tbl[] __initdata = {
 	[5] = BW_MBPS(3600), /* At least 450 MHz on bus. */
 	[6] = BW_MBPS(3936), /* At least 492 MHz on bus. */
 	[7] = BW_MBPS(4264), /* At least 533 MHz on bus. */
-#ifdef CONFIG_CPU_OVERCLOCK_18_GHZ
+#ifdef CONFIG_BUS_OVERCLOCK
 	[8] = BW_MBPS(4800), /* At least 600 MHz on bus. */
 #endif
 };
@@ -162,7 +162,11 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 	[20] = { { 1458000, HFPLL, 1, 0x34 }, LVL_HIGH, 1150000, 7 },
 #endif
 #ifdef CONFIG_CPU_OVERCLOCK_18_GHZ
+#ifdef CONFIG_BUS_OVERCLOCK
 	[21] = { { 1512000, HFPLL, 1, 0x34 }, LVL_HIGH, 1150000, 8 },
+#else
+	[21] = { { 1512000, HFPLL, 1, 0x34 }, LVL_HIGH, 1150000, 7 },
+#endif
 #endif
 	{ }
 };

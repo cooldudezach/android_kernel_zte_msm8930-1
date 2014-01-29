@@ -16,6 +16,11 @@
  *
  */
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel_stat.h>
+
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/cpufreq.h>
@@ -27,6 +32,9 @@
 #include <linux/earlysuspend.h>
 
 #include <asm/cputime.h>
+
+//#cdz#//
+#define cputime64_sub(__a, __b)		((__a) - (__b))
 
 static void (*pm_idle_old)(void);
 static atomic_t active_count = ATOMIC_INIT(0);
@@ -47,7 +55,7 @@ static struct work_struct freq_scale_work;
 static u64 freq_change_time;
 static u64 freq_change_time_in_idle;
 
-static cpumask_t work_cpumask;
+static struct cpumask const * work_cpumask;
 
 static unsigned int suspended = 0;
 static unsigned int enabled = 0;
@@ -109,7 +117,7 @@ static void cpufreq_interactivex_timer(unsigned long data)
 
 		target_freq = policy->max;
 
-		cpumask_set_cpu(data, &work_cpumask);
+		cpumask_set_cpu(data, (struct cpumask *)&work_cpumask);
 		queue_work(up_wq, &freq_scale_work);
 		return;
 	}
@@ -139,7 +147,7 @@ static void cpufreq_interactivex_timer(unsigned long data)
 		return;
 
 	target_freq = policy->min;
-	cpumask_set_cpu(data, &work_cpumask);
+	cpumask_set_cpu(data, (struct cpumask *)&work_cpumask);
 	queue_work(down_wq, &freq_scale_work);
 }
 
@@ -198,14 +206,14 @@ static void cpufreq_interactivex_freq_change_time_work(struct work_struct *work)
 {
 	unsigned int cpu;
 	unsigned int newtarget;
-	cpumask_t tmp_mask = work_cpumask;
+	struct cpumask const * tmp_mask = work_cpumask;
 	newtarget = FREQ_THRESHOLD;
 
 	for_each_cpu(cpu, tmp_mask) {
 	  if (!suspended) {
 		if (target_freq == policy->max) {
 			if (nr_running() == 1) {
-				cpumask_clear_cpu(cpu, &work_cpumask);
+				cpumask_clear_cpu(cpu, (struct cpumask *)&work_cpumask);
 				return;
 			}
 //			__cpufreq_driver_target(policy, target_freq, CPUFREQ_RELATION_H);
@@ -217,7 +225,7 @@ static void cpufreq_interactivex_freq_change_time_work(struct work_struct *work)
 		}
 	  }
 	  freq_change_time_in_idle = get_cpu_idle_time_us(cpu, &freq_change_time);
-	  cpumask_clear_cpu(cpu, &work_cpumask);
+	  cpumask_clear_cpu(cpu, (struct cpumask *)&work_cpumask);
 	}
 
 

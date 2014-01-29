@@ -5,118 +5,247 @@ menuconfig ZERGRUSH
 	  Modifications for the ZERGRUSH kernel
 
 if ZERGRUSH
-menu "Speedhacks Options"
-menu "Overclock CPU"
-config CPU_OVERCLOCK_15_GHZ
-	boolean "Overclocking to 1.5GHz"
-	default y
+menuconfig SPEEDHACK_EXTRA
+        bool "Speedhack Options"
+        help
+          Enable speed boosting modifiers
+
+	if SPEEDHACK_EXTRA
+	config BUS_OVERCLOCK
+		boolean "Overclock BUS to 600 MHz"
+		default n
+		help
+		  Overclock the BUS to improve CPU performance.
+
+	menu "Overclock CPU"
+	config CPU_OVERCLOCK_15_GHZ
+		boolean "Overclock to 1.5GHz"
+		default y
+		help
+		  Overclock for MSM8930 chipset. (Based on MSM8960 acpuclock table)
+
+	config CPU_OVERCLOCK_17_GHZ
+		boolean "Overclock to 1.7GHz"
+		depends on CPU_OVERCLOCK_15_GHZ
+		default y
+		help
+		  Overclock for MSM8930 chipset. (Based on MSM8960 acpuclock table)
+
+	config CPU_OVERCLOCK_18_GHZ
+		boolean "Overclock to 1.8GHz"
+		depends on CPU_OVERCLOCK_17_GHZ
+		default n
+		help
+		  Overclock for MSM8930 chipset. (Based on MSM8960 acpuclock table)
+	endmenu
+	endif
+
+menuconfig BLOCK_IO_EXTRA
+        bool "Extra Block Schedulers"
+        help
+          Enable additional block schedulers
+
+	if BLOCK_IO_EXTRA
+	config IOSCHED_BFQ
+		tristate "BFQ I/O scheduler"
+		default n
+		---help---
+		  It's broken
+
+	config IOSCHED_FIOPS
+		tristate "FIOPS I/O scheduler"
+		default y
+		---help---
+		  no
+
+	config IOSCHED_SIO
+		tristate "SIO I/O scheduler"
+		default y
+		---help---
+		  no
+
+	config IOSCHED_ZEN
+		tristate "Zen I/O scheduler"
+		default y
+		---help---
+		  no
+
+	config IOSCHED_VR
+		tristate "V(R) I/O scheduler"
+		default y
+		---help---
+		  no
+	endif
+
+menuconfig CPU_FREQ_GOV_EXTRA
+        bool "Extra CPU Govs"
+        depends on CPU_FREQ
+        help
+          Enable aditional cpu governors
+
+	if CPU_FREQ_GOV_EXTRA
+	config CPU_FREQ_GOV_ONDEMANDX
+		tristate "Enable OnDemandX Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_INTELLIDEMAND
+		tristate "Enable Intellidemand Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_INTERACTIVEX
+		tristate "Enable InteractiveX Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_SMARTASS2
+		tristate "Enable SmartassV2 Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_BADASS
+		tristate "Enable Badass Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	if CPU_BADASS
+	menu "Badass CPU GOV options"
+		config CPU_FREQ_GOV_BADASS_2_PHASE
+			tristate "'2-phase' power-efficiency badass algorithm"
+			depends on CPU_BADASS
+			help
+			  '2-phase' - This driver adds a new algo to save power
+
+		config CPU_FREQ_GOV_BADASS_2_PHASE_FREQ
+			int "'2-phase' badass frequency"
+			default 918000
+				depends on CPU_BADASS
+			depends on CPU_FREQ_GOV_BADASS_2_PHASE
+
+		config CPU_FREQ_GOV_BADASS_3_PHASE
+			tristate "'3-phase' power-efficiency badass algorithm"
+			depends on CPU_BADASS
+			depends on CPU_FREQ_GOV_BADASS_2_PHASE
+			help
+			  '3-phase' - This driver adds a new algo to save power
+
+		config CPU_FREQ_GOV_BADASS_3_PHASE_FREQ
+			int "'3-phase' badass frequency"
+			default 1188000
+			depends on CPU_BADASS
+			depends on CPU_FREQ_GOV_BADASS_2_PHASE
+			depends on CPU_FREQ_GOV_BADASS_3_PHASE
+
+		config CPU_FREQ_GOV_BADASS_GPU_CONTROL
+			tristate "'gpu_control' power-efficiency badass algorithm"
+			depends on CPU_BADASS
+			depends on CPU_FREQ_GOV_BADASS_2_PHASE
+			help
+			  'gpu_control' - This driver adds a new algo to save power
+
+		config CPU_FREQ_GOV_BADASS_LOWBAT_POWERSAVE
+			tristate "'lowbat_powersave' power-efficiency badass algorithm"
+			depends on CPU_BADASS
+			help
+			  'lowbat_powersave' - This driver adds a new algo to save power
+
+		config CPU_FREQ_GOV_BADASS_ALLOW_BYPASS
+			tristate "Allows bypassing phases"
+			depends on CPU_BADASS
+			depends on CPU_FREQ_GOV_BADASS_2_PHASE
+			help
+			  'allow_bypass' - This driver adds a bypass to the phases
+		endmenu
+	endif # BADASS GOV OPTIONS
+
+	config CPU_FREQ_GOV_ASSWAX
+		tristate "Enable Asswax Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_SMOOTHASS
+		tristate "Enable Smoothass Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  Slightly more aggressive smartass
+
+	config CPU_FREQ_GOV_BRAZILIANWAX
+		tristate "Enable Brazilianwax Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_SAVAGEDZEN
+		tristate "Enable SavagedZen Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_LAGFREE
+		tristate "Enable Lagfree Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  'lagfree' - this driver is rather similar to the 'ondemand'
+		  governor both in its source code and its purpose, the difference is
+		  its optimisation for better suitability in a battery powered
+		  environment.  The frequency is gracefully increased and decreased
+		  rather than jumping to 100% when speed is required.
+
+	config CPU_FREQ_MIN_TICKS
+		int "Ticks between lagfree polling interval"
+		default 10
+		depends on CPU_FREQ_GOV_LAGFREE
+		help
+		  Minimum number of ticks between polling interval for governor.
+
+	config CPU_FREQ_SAMPLING_LATENCY_MULTIPLIER
+		int "Sampling rate multiplier for lagfree"
+		default 1000
+		depends on CPU_FREQ_GOV_LAGFREE
+		help
+		  Sampling latency rate multiplied by the cpu switch latency.
+		  Affects governor polling.
+
+	config CPU_FREQ_GOV_LULZACTIVE
+		tristate "Enable LulzActive Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+
+	config CPU_FREQ_GOV_WHEATLEY
+		tristate "Enable Wheatley Governor"
+		depends on CPU_FREQ
+		default y
+		help
+		  None
+	endif
+
+menuconfig FS_EXTRA
+	bool "Extra Filesystems"
 	help
-	  Overclock for MSM8930 chipset. (Based on MSM8960 acpuclock table)
+	  Enable additional filesystems
 
-config CPU_OVERCLOCK_17_GHZ
-	boolean "Overclocking to 1.7GHz"
-	depends on CPU_OVERCLOCK_15_GHZ
-	default y
-	help
-	  Overclock for MSM8930 chipset. (Based on MSM8960 acpuclock table)
-
-config CPU_OVERCLOCK_18_GHZ
-	boolean "Overclocking to 1.8GHz"
-	depends on CPU_OVERCLOCK_17_GHZ
-	default n
-	help
-	  Overclock for MSM8930 chipset. (Based on MSM8960 acpuclock table)
-
-endmenu
-endmenu
-
-menu "Block Schedulers"
-endmenu
-
-menu "Extra CPU Govs"
-config CPU_ONDEMANDX
-	boolean "Enable OnDemandX Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_INTELLIDEMAND
-	boolean "Enable Intellidemand Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_INTERACTIVEX
-	boolean "Enable InteractiveX Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_SMARTASS2
-	boolean "Enable SmartassV2 Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_BADASS
-	boolean "Enable Badass Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_ASSWAX
-	boolean "Enable Asswax Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_SMOOTHASS
-	boolean "Enable Smoothass Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_BRAZILIANWAX
-	boolean "Enable Brazilianwax Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_SAVAGEDZEN
-	boolean "Enable SavagedZen Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_LAGFREE
-	boolean "Enable Lagfree Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_LULZACTIVE
-	boolean "Enable LulzActive Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-
-config CPU_WHEATLEY
-	boolean "Enable Wheatley Governor"
-	depends on CPU_FREQ
-	default y
-	help
-	  None
-endmenu
+	if CPU_FREQ_GOV_EXTRA
+	source "fs/exfat/Kconfig"
+	source "fs/f2fs/Kconfig"
+	endif
 
 endif # ZERGRUSH

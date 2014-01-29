@@ -23,6 +23,11 @@
  *
  */
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel_stat.h>
+
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/cpufreq.h>
@@ -33,6 +38,9 @@
 #include <linux/moduleparam.h>
 #include <asm/cputime.h>
 #include <linux/earlysuspend.h>
+
+//#cdz#//
+#define cputime64_sub(__a, __b)		((__a) - (__b))
 
 static void (*pm_idle_old)(void);
 static atomic_t active_count = ATOMIC_INIT(0);
@@ -57,7 +65,7 @@ static struct workqueue_struct *up_wq;
 static struct workqueue_struct *down_wq;
 static struct work_struct freq_scale_work;
 
-static cpumask_t work_cpumask;
+static struct cpumask const * work_cpumask;
 static unsigned int suspended;
 
 enum {
@@ -259,7 +267,7 @@ static void cpufreq_brazilianwax_timer(unsigned long data)
                         return;
 
                 this_brazilianwax->force_ramp_up = 1;
-                cpumask_set_cpu(data, &work_cpumask);
+                cpumask_set_cpu(data, (struct cpumask *)&work_cpumask);
                 queue_work(up_wq, &freq_scale_work);
                 return;
         }
@@ -284,7 +292,7 @@ static void cpufreq_brazilianwax_timer(unsigned long data)
         if (cputime64_sub(update_time, this_brazilianwax->freq_change_time) < down_rate_us)
                 return;
 
-        cpumask_set_cpu(data, &work_cpumask);
+        cpumask_set_cpu(data, (struct cpumask *)&work_cpumask);
         queue_work(down_wq, &freq_scale_work);
 }
 
@@ -317,7 +325,7 @@ static void cpufreq_brazilianwax_freq_change_time_work(struct work_struct *work)
         struct brazilianwax_info_s *this_brazilianwax;
         struct cpufreq_policy *policy;
         unsigned int relation = CPUFREQ_RELATION_L;
-        cpumask_t tmp_mask = work_cpumask;
+        struct cpumask const * tmp_mask = work_cpumask;
         for_each_cpu(cpu, tmp_mask) {
                 this_brazilianwax = &per_cpu(brazilianwax_info, cpu);
                 policy = this_brazilianwax->cur_policy;
@@ -390,7 +398,7 @@ static void cpufreq_brazilianwax_freq_change_time_work(struct work_struct *work)
 			} 
                 }
 
-                cpumask_clear_cpu(cpu, &work_cpumask);
+                cpumask_clear_cpu(cpu, (struct cpumask *)&work_cpumask);
         }
 }
 
@@ -793,7 +801,7 @@ static int __init cpufreq_brazilianwax_init(void)
         }
 
         /* Scale up is high priority */
-        up_wq = create_rt_workqueue("kbrazilianwax_up");
+        up_wq = create_workqueue("kbrazilianwax_up");
         down_wq = create_workqueue("kbrazilianwax_down");
 
         INIT_WORK(&freq_scale_work, cpufreq_brazilianwax_freq_change_time_work);
@@ -804,7 +812,7 @@ static int __init cpufreq_brazilianwax_init(void)
 }
 
 #ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_BRAZILIANWAX
-pure_initcall(cpufreq_brazilianwax_init);
+fs_initcall(cpufreq_brazilianwax_init);
 #else
 module_init(cpufreq_brazilianwax_init);
 #endif

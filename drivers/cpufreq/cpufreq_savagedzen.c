@@ -25,6 +25,11 @@
  *
  */
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel_stat.h>
+
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/cpufreq.h>
@@ -35,6 +40,9 @@
 #include <linux/moduleparam.h>
 #include <asm/cputime.h>
 #include <linux/earlysuspend.h>
+
+//#cdz#//
+#define cputime64_sub(__a, __b)		((__a) - (__b))
 
 static void (*pm_idle_old)(void);
 static atomic_t active_count = ATOMIC_INIT(0);
@@ -59,7 +67,7 @@ static struct workqueue_struct *up_wq;
 static struct workqueue_struct *down_wq;
 static struct work_struct freq_scale_work;
 
-static cpumask_t work_cpumask;
+static struct cpumask const * work_cpumask;
 static unsigned int suspended;
 
 enum {
@@ -235,7 +243,7 @@ static void cpufreq_savagedzen_timer(unsigned long data)
 
 
                 this_savagedzen->force_ramp_up = 1;
-                cpumask_set_cpu(data, &work_cpumask);
+                cpumask_set_cpu(data, (struct cpumask *)&work_cpumask);
                 queue_work(up_wq, &freq_scale_work);
                 return;
         }
@@ -260,7 +268,7 @@ static void cpufreq_savagedzen_timer(unsigned long data)
         if (cputime64_sub(update_time, this_savagedzen->freq_change_time) < down_rate_us)
                 return;
 
-        cpumask_set_cpu(data, &work_cpumask);
+        cpumask_set_cpu(data, (struct cpumask *)&work_cpumask);
         queue_work(down_wq, &freq_scale_work);
 }
 
@@ -293,7 +301,7 @@ static void cpufreq_savagedzen_freq_change_time_work(struct work_struct *work)
         struct savagedzen_info_s *this_savagedzen;
         struct cpufreq_policy *policy;
         unsigned int relation = CPUFREQ_RELATION_L;
-        cpumask_t tmp_mask = work_cpumask;
+        struct cpumask const * tmp_mask = work_cpumask;
         for_each_cpu(cpu, tmp_mask) {
                 this_savagedzen = &per_cpu(savagedzen_info, cpu);
                 policy = this_savagedzen->cur_policy;
@@ -336,7 +344,7 @@ static void cpufreq_savagedzen_freq_change_time_work(struct work_struct *work)
                                 get_cpu_idle_time_us(cpu,&this_savagedzen->freq_change_time);
                 }
 
-                cpumask_clear_cpu(cpu, &work_cpumask);
+                cpumask_clear_cpu(cpu, (struct cpumask *)&work_cpumask);
         }
 }
 
@@ -730,12 +738,6 @@ static int __init cpufreq_savagedzen_init(void)
         return cpufreq_register_governor(&cpufreq_gov_savagedzen);
 }
 
-#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_savagedzen
-pure_initcall(cpufreq_savagedzen_init);
-#else
-module_init(cpufreq_savagedzen_init);
-#endif
-
 static void __exit cpufreq_savagedzen_exit(void)
 {
         cpufreq_unregister_governor(&cpufreq_gov_savagedzen);
@@ -743,8 +745,13 @@ static void __exit cpufreq_savagedzen_exit(void)
         destroy_workqueue(down_wq);
 }
 
-module_exit(cpufreq_savagedzen_exit);
-
-MODULE_AUTHOR ("jsseidel");
+MODULE_AUTHOR("jsseidel");
 MODULE_DESCRIPTION ("'cpufreq_savagedzen' - A badass cpufreq governor! Based on Smartass");
 MODULE_LICENSE ("GPL");
+
+#ifdef CONFIG_CPU_FREQ_DEFAULT_GOV_SAVAGEDZEN
+fs_initcall(cpufreq_savagedzen_init);
+#else
+module_init(cpufreq_savagedzen_init);
+#endif
+module_exit(cpufreq_savagedzen_exit);

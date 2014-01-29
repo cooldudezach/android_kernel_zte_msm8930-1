@@ -19,6 +19,11 @@
  * 
  */
 
+#include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/kernel_stat.h>
+
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/cpufreq.h>
@@ -31,6 +36,9 @@
 #include <linux/earlysuspend.h>
 #include <asm/cputime.h>
 #include <linux/suspend.h>
+
+//#cdz#//
+#define cputime64_sub(__a, __b)		((__a) - (__b))
 
 #define LULZACTIVE_VERSION	(2)
 #define LULZACTIVE_AUTHOR	"tegrak"
